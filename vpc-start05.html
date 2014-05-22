@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Exploring AWS Tools - VPC</title>
+
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="http://www.slamgarden.com">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Clayton Han-Mitchell">
+    <meta name="description" content="A demonstration of AWS tools.">
+    <meta name="robots" content="all">
+
+
+    <!--[if lt IE 9]>
+    <script src="script/html5shiv.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="splash.css" type="text/css"/>
+    <script type="text/javascript" src="rollout-generic.js"></script>
+
+</head>
+
+<body>
+<div id="container">
+<p id="grid"><a class="previous break" href="cf-start04.html">Previous</a> <a class="next break" href="index.html">Start</a>
+<h1>Exploring AWS Client Tools - Could Formation and the VPC</h1>
+
+<h2>Basics of AWS VPC</h2>
+<p>
+There is an excellent user guide which is more to the point than much of anything I could write on the VPC here.  
+<A href="http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/default-vpc.html">http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/default-vpc.html</A>
+</p>
+<p>
+Using Cloud Formation with a Beanstalk in a VPC, with both a pre-existing keypair and a pre-existing security group, requires adding the beanstalk into a pre-existing VPC - namely, the one which contains the security group.
+
+Thus, the beanstalk cloud formation template is altered with these options
+<pre>
+           "OptionSettings" : [
+             {
+             "Namespace" : "aws:ec2:vpc",
+             "OptionName" : "VPCId",
+             "Value" : "vpc-eb8aae80"
+             },
+             {
+             "Namespace" : "aws:ec2:vpc",
+             "OptionName" : "Subnets",
+             "Value" : "subnet-e98aae82"
+             },
+             {
+             "Namespace" : "aws:autoscaling:launchconfiguration",
+             "OptionName" : "SecurityGroups",
+             "Value" : "sg-c7a86aa2"
+             },
+</pre>
+
+<pre>
+<div class="Rollout" id="/ElasticBeanstalk-with-VPC.template">Click for the full file</div>
+</pre>
+<p>
+Now the command I used to create the beanstalk is<pre>
+ aws cloudformation create-stack --stack-name Practice \
+ --template-body=file:///Users/mitchhan/aws-cli/tests/ElasticBeanstalkCustom.template \
+ --capabilities=CAPABILITY_IAM
+ </pre>
+</p>
+
+<pre> ec2-describe-instances --filter "tag-value=Prac*"</pre>
+<br>
+There are yet better ways to list the instances based on the output of the cloudformation command.  More on that later, but for now we have the above partial match and can list the EC2 intance created. Obtaining the instance Id in that way, I can run ec2-describe-instance-status <id> and I can see the EC2 instance is up and running.
+<br>
+Now I can test against it's public IP address if the security group which allows all SSH ( later I will lock it down more, but at least for testing purposes now), <pre>
+ ssh ec2-user@ec2-54-187-193-238.us-west-2.compute.amazonaws.com -i ~/.ssh/aws_rsa
+ </pre>
+ And I'm logged in.  It worked. I check the process table with the ps command and I see tomcat is indeed running.
+ </p>
+ <p>The next thing to add into cloud formation is the webapp war file I want deployed, and the RDS setup.
+</p>
+
+<h3>Quiz</h3>
+How many subnets come by default in the VPC?
+  <div class="Question 08">Show Answer</div>
+
+<p id="grid"><a class="previous break" href="cf-start04.html">Previous</a> <a class="next break" href="index.html">Start</a>
+</div>
+</body>
+</html>

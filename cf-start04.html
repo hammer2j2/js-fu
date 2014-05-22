@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Exploring AWS Tools - Cloud Formation</title>
+
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="http://www.slamgarden.com">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Clayton Han-Mitchell">
+    <meta name="description" content="A demonstration of AWS tools.">
+    <meta name="robots" content="all">
+
+
+    <!--[if lt IE 9]>
+    <script src="script/html5shiv.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="splash.css" type="text/css"/>
+    <script type="text/javascript" src="rollout-generic.js"></script>
+
+</head>
+
+<body>
+<div id="container">
+<p id="grid"><a class="previous break" href="s3-start03.html">Previous</a> <a class="next break" href="vpc-start05.html">Next</a>
+<h1>Exploring AWS Client Tools - Cloud Formation</h1>
+
+<h2>What AWS Cloud Formation Does for You</h2>
+<p>
+In a typical high-availability AWS application footprint there are several resources required: Elastic Load Balancers, EC2 instances, EBS volumes, SimpleDB domains and an RDS instance. They also setup Auto Scaling, EC2 and RDS Security Groups, configure CloudWatch monitoring and alarms, and use SNS for notifications.
+</p>
+<p><ul><li>The Template<br>Cloud Formation uses json templates to describe the collection of these resources and dependencies a given application will need.
+<br><dd>See available templates you can download and modify here <A href="http://aws.amazon.com/cloudformation/aws-cloudformation-templates/">http://aws.amazon.com/cloudformation/aws-cloudformation-templates</A>
+</dd>
+</li><li>
+The Stack<br>Cloud Formation creates a "Stack" which is the collection of those resources created in the right sequence and correct confirmation</li>
+</ul>
+</p>
+<h3>Getting Started</h3>
+<h2>Download and the CLI tools</h2>
+<A href="http://aws.amazon.com/developertools/AWS-CloudFormation/2555753788650372">http://aws.amazon.com/developertools/AWS-CloudFormation/2555753788650372</A>
+<p>There is a good getting started page here: <A href="http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-cli.html">http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-cli.html</A>
+</p>
+<p>Make sure the CLI is working.  You should be able to run <em>aws cloudformation list-stacks</em> and see an empty structure if you have no formations yet.
+</p>
+<p>Now let's start using the cloudformation api through the cli tools</p><p>As an example, let's suppose we need an in-memory key-value cache.  We decide between memcached and redis which AWS supports, to use Redis, and we find a template for it on the above page and download it.
+</p><p>
+It took me about an hour to get the syntax for the CLI working, especially since some options are not documented in the tool and I had to search for 45 minutes to figure out there is one parameter that takes a hardcoded value, namely <pre>--capabilities=CAPABILITY_IAM</pre> Anyway, here was my final command 
+<pre>
+aws cloudformation create-stack --stack-name=Claytons-redis-stack  \
+--template-body=file:///Users/mitchhan/aws-cli/tests/ElastiCache_Redis.template \
+--parameters ParameterKey=KeyName,ParameterValue=aws_rsa --capabilities=CAPABILITY_IAM
+</pre>
+</p><p>
+Once created, list it with<pre> aws cloudformation list-stacks</pre></p>
+<p>Now let's create Tomcat and MySql components, or beanstalk and RDS components in AWS terminology.  I find the ElasticBeanstalk_Simple.template from the above page, save it locally in case I want to modify anything and execute<pre>
+aws cloudformation create-stack --stack-name=Claytons-beanstalk-stack  \
+--template-body=file:///Users/mitchhan/aws-cli/tests/ElasticBeanstalk_Simple.template  \
+--capabilities=CAPABILITY_IAM
+</pre>
+</p>
+<p>
+I wanted to add my existing keypair into the template, and found that this was not as simple as I had thought. For one, the beanstalk resource sets this property differntly than the EC2 resource, even though in the end it's the EC2 which gets the property, cloudformation needs it passed in the beanstalk in a different way than a direct EC2 resource in cloudformation.  So, making EC2's in cloudformation would have the key line look like the example below.
+<h3> EC2 Cloudformation Resource with key pair </h3>
+Notice the straightforward key value pair under Resources->Properties named KeyName.
+<pre>
+ "Resources": {
+  "instance1": {
+    "Type": "AWS::EC2::Instance",
+    "Properties": {
+      "AvailabilityZone": "us-east-1d",
+      "DisableApiTermination": "FALSE",
+      "ImageId": "ami-12345678",
+      "InstanceType": "m1.small",
+      "KernelId": "aki-87654321",
+      <B>"KeyName": "MyKeyPair",</B>
+      "Monitoring": "false",
+      "SecurityGroups": [{"Ref": "sgfoo"}]      
+    }
+  },
+</pre>
+</p>
+
+<h3> Beanstalk Cloudformation Resource with key pair </h3>
+<p>
+Notice it uses an OptionsSettings object with EC2KeyName, under the path of <br>
+Resources->Properties->ConfigurationTemplates->OptionsSettings
+And where the name was KeyName in EC2, it now is EC2KeyName in the Beanstalk. 
+<pre>
+ "Resources" : {
+      "sampleApplication" : {
+        "Type" : "AWS::ElasticBeanstalk::Application",
+        "Properties" : {
+          "Description" : "AWS Elastic Beanstalk Sample Application",
+          "ApplicationVersions" : [{
+            "VersionLabel" : "Initial Version",
+            "Description" : "Version 1.0",
+            "SourceBundle" : {
+              "S3Bucket" : { "Fn::Join" : ["-", ["elasticbeanstalk-samples", { "Ref" : "AWS::Region" }]]},
+              "S3Key" : "elasticbeanstalk-sampleapp.war"
+            }
+          }],
+          "ConfigurationTemplates" : [{
+            "TemplateName" : "DefaultConfiguration",
+            "Description" : "Default Configuration Version 1.0 - with SSH access",
+            "SolutionStackName" : "64bit Amazon Linux running Tomcat 7",
+            "OptionSettings" : [{
+              "Namespace" : "aws:autoscaling:launchconfiguration",
+              <B>"OptionName" : "EC2KeyName",
+              "Value" : "aws_rsa"</B>
+            }]
+          }]
+        }
+      },
+</pre>
+For the complete working template:
+<div class="Rollout" id="/ElasticBeanstalkSample-with-keypair.template">Show Text</div>
+</p>
+<h3>Quiz</h3>
+What does IAM stand for?
+  <div class="Question 07">Show Answer</div>
+
+<p>
+<h3>Add a Security Group Property into the Beanstalks</h3>
+<p>
+I bring some further customization requirements to play for the sake of understanding what is possible, easy or hard, or impossible in cloudformation.  Generally I have some reason I want to modify the template, and in this case, I already have a security group with ingress rules I like to re-use, so why not re-use that in my template instead of create a new security group which would do the same thing but have a different name?  Sounds reasonable I think.
+</p>
+<p>There is a post on just that, <A href="https://forums.aws.amazon.com/thread.jspa?threadID=73197">https://forums.aws.amazon.com/thread.jspa?threadID=73197</A>
+What that would look like for an EC2 resources is below. I will need to modify that for a beanstalk resource and see if I have learned anything from my key pair custom work above that will help here.
+<pre>
+"Resources" : {
+    :
+    "Ec2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "SecurityGroups" : [ "MyExistingSecurityGroup" ],
+        "ImageId" : "ami-12345678"
+      }
+    },
+</pre>
+That works for an EC2 Instance type object, but not in the Beanstalk Application object.  I found this developer guide on beanstalk and VPCs which has some hints at the bottom of the page, <A href="http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/AWSHowTo-vpc-basic.html">http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/AWSHowTo-vpc-basic.html</A>
+</p>
+<p>According to that guide, it appears one can use the below list of options<br>
+<pre>
+option_settings:
+  - namespace: aws:autoscaling:launchconfiguration
+    option_name: EC2KeyName
+    value: ec2keypair 
+    
+  - namespace: aws:ec2:vpc
+    option_name: VPCId
+    value: vpc-170647c
+    
+  - namespace: aws:ec2:vpc
+    option_name: Subnets
+    value: subnet-4f195024
+    
+  - namespace: aws:ec2:vpc
+    option_name: ELBSubnets
+    value: subnet-fe064f95
+    
+  - namespace: aws:autoscaling:launchconfiguration
+    option_name: InstanceType
+    value: m1.small
+    
+  - namespace: aws:autoscaling:launchconfiguration
+    option_name: SecurityGroups
+    value: sg-7f1ef110
+</pre>
+Notice the <em>EC2KeyName</em> option we explored already.  Now the option name <em>SecurityGroups</em> is there, but unlike the EC2KeyName, the option name is identical to what is used in the EC2 Instance object, name, just <em>SecurityGroups</em>.
+Adding this into the template and launching, I got an error:
+<pre>"ResourceStatusReason": "Configuration validation exception: The security group 'sg-c7a86aa2' does not exist"</pre>
+OK, at least the config is passing, and I have something else wrong now.  Although I am sure that is my security group ID in one of my EC2 instances.  Maybe I can't use that for some reason.  Googling a bit I found the EC2 API Error Code doc <A href="http://docs.aws.amazon.com/AWSEC2/latest/APIReference/api-error-codes.html">http://docs.aws.amazon.com/AWSEC2/latest/APIReference/api-error-codes.html</A>
+<dd><em>The specified security group does not exist. Ensure that you provide the full security group ID in the request, in the form sg-xxxxxxx.
+
+This error may occur because the ID of a recently created security group has not propagated through the system. For more information, see Eventual Consistency.
+
+You cannot specify a security group that is in a different region or VPC to the request. For example, if you are creating a network interface, you cannot specify a security group that is associated with a different VPC to the subnet you've specified in your request.
+</dd></em>
+The only scenario that could apply in my case is the mismatched VPC condition mentioned. I notice each of my secutiry groups has a unique VPC ID and I have done nothing to intentionally set the VPC in my beanstalk template. More research on how to to do that.. 
+</p>
+<p>Adding in the VPCId of my security group BEFORE the security group option solved the security group error, but requires that i do more to specify elements of the VPC ( that I already have ).  Big sigh.
+</p><pre>
+ "ResourceStatusReason": "Configuration validation exception: Specify the subnets for the VPC.",
+ </pre>
+ <p>
+ I'm not sure why cloudformation with the beanstalk application I had, when I didn't mention a VPC, created the networking elements just fine on its own, but now that I mention a specific VPC, I need to specify more details. 
+ This is leading into a deeper exploration of the AWS VPC which is covered on the next page.
+ </p>
+<p id="grid"><a class="previous break" href="s3-start03.html">Previous</a> <a class="next break" href="vpc-start05.html">Next</a>
+</div>
+</body>
+</html>

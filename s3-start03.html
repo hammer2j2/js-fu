@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Exploring AWS Tools - Working with S3</title>
+
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="http://www.slamgarden.com">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Clayton Han-Mitchell">
+    <meta name="description" content="A demonstration of AWS tools.">
+    <meta name="robots" content="all">
+
+
+    <!--[if lt IE 9]>
+    <script src="script/html5shiv.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="splash.css" type="text/css"/>
+    <script type="text/javascript" src="rollout-generic.js"></script>
+
+</head>
+
+<body>
+<div id="container">
+<p id="grid"><a class="previous break" href="ami-start02.html">Previous</a> <a class="next break" href="cf-start04.html">Next</a>
+<h1>Exploring AWS Client Tools - Working with S3</h1>
+
+<h2>Initial Steps with S3</h2>
+<p>Currently S3 is already setup for me through the AWS Console GUI.  I recommend this for getting started, and we can return to bucket creation and configuration CLI style a bit later.  If you haven't setup an S3 bucket to use yet, go to the s3 console and click on create: <A href="https://console.aws.amazon.com/s3/">https://console.aws.amazon.com/s3/.</A>  There are other options to add, such as if you want world readable object and permissions inheritance and web serving of your content.  I have turned all of those on.
+</p>
+<h3>Upload a File to S3 with the AWS CLI</h3>
+<p>Now that you have an S3 bucket, let's store something there.  Perhaps an HTML file or other small file you have to start with.  
+Mine is called "index.html" since I am starting a web site on S3, that makes sense.<br>
+My bucket name is the name of my web site: <em>www.slamgarden.com</em> so I enter the AWS command<br>
+
+<pre>aws s3 cp index.html s3://www.slamgarden.com/</pre>
+Now I will upload all my files except my .git and .old directories:
+<pre>aws s3 cp . s3://www.slamgarden.com/ --recursive --exclude ".git/*" --exclude ".old/*"</pre>
+Note the <em>.git/*</em> part and the <em>*</em> is important or it won't really avoid recursion into the .git directory.
+</p>
+
+<h3>Quiz</h3>
+What does EBS stand for?
+<div class="Question 05">Show Answer</div>
+<p id="grid"><a class="previous break" href="ami-start02.html">Previous</a> <a class="next break" href="cf-start04.html">Next</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Exploring AWS Tools - Managing AMIs</title>
+
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="http://www.slamgarden.com">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Clayton Han-Mitchell">
+    <meta name="description" content="A demonstration of AWS tools.">
+    <meta name="robots" content="all">
+
+
+    <!--[if lt IE 9]>
+    <script src="script/html5shiv.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="splash.css" type="text/css"/>
+    <script type="text/javascript" src="rollout-generic.js"></script>
+
+</head>
+
+<body>
+<div id="container">
+<p id="grid"><a class="previous break" href="index.html">Previous</a> <a class="next break" href="s3-start03.html">Next</a>
+<h1>Exploring AWS Client Tools - Managing AMIs</h1>
+
+<h2>Basic Navigation of AMI and Instances</h2>
+<p>Since both AMI storage and running Instance will cost you money, at least they will if and when you are no longer in the free tier which expires after one year, and for just plain practical reasons, you want a quick and easy way to see all your AMIs stored in the cloud and all your running instances.</p>
+<p>One way to do that on the command line is with EC2 API Tools - remember all those <pre>ec2-....-....</pre> commands that live in <em>/usr/local/ec2-api-tools/bin</em>?</p>However, there is no one command version to see all regions, and being a novice, we might forget where we made some or our images when testing things out so let's be sure we modify those commands a bit to show us all US regions, or other regions as desired.</p>
+<p>So, I have saved this in my path and named it ec2-describe-all-us.
+<pre>
+ #!/bin/bash
+
+  for r in `ec2-describe-regions | awk '$2~/^us/ {print $2}'`;do 
+    echo "REGION: $r"; 
+    echo "================== Images:";
+    ec2-describe-images --region $r | egrep -v Executing
+    echo "================== Instances:";
+    ec2-describe-instances --region $r | egrep -v Executing | grep INSTANCE | cut -c1-163
+  done
+</pre>
+
+So, i can run that now as <pre>ec2-describe-all</pre>
+to see the below output:
+<pre>
+REGION: us-east-1
+================== Images:
+
+================== Instances:
+REGION: us-west-2
+================== Images:
+
+================== Instances:
+INSTANCE    i-b25923ba  ami-b8f69f88    ec2-54-187-9-244.us-west-2.compute.amazonaws.com    
+      ip-172-31-15-11.us-west-2.compute.internal  running aws_rsa 0t1.micro   2014-04-07
+REGION: us-west-1
+================== Images:
+
+================== Instances:
+</pre>
+</p>
+<p>Now I can rest assured, at least for the US regions I know what all my stored AMIs and running EC2 instances are in one easy command.  Modify the script to do other regions or filter for other things as useful to you, like make a ec2-describe-all-intl script or ec2-describe-all-eu script.</p>
+
+<h3>Working with the EC2 instance to make a custom AMI</h3>
+
+<p>Now that we have a default AMI from Amazon's stock of linux AMI images, let's customize it as the next step in our path to owning our own custom base AMIs.</p>
+ssh into the instance using it's IP address is simply
+<pre>ssh ec2-user@54.187.9.244 -i ~/.ssh/aws_rsa</pre>
+Then i install tomcat7 with
+<pre>sudo yum install "tomcat7*" </pre>
+I can mess around with the config of tomcat a little, but ultimately this will be automated in an install config tool like chef and puppet, but that will be later. For now I just spent 5 minutes setting up a tomcat admin account and services defaults so tomcat would always be running and left it started up.</p>
+This will become our new custom AMI, but we have to save it first, don't we?
+<br>
+To save the instance to an image, locate the instance id with <pre>ec2-describe-instances</pre> then run the create image command.<br>
+In this case I want to name my instance tomcat7 and I have an ec2 instance named i-b25923ba which represents that.
+
+<pre>ec2-create-image -name tomcat7 i-b25923ba</pre>
+
+<h3>Quiz</h3>
+What does AMI stand for?
+  <div class="Question 03">Show Answer</div>
+Where does the AMI image get stored?
+<div class="Question 04">Show Answer</div>
+<p id="grid"><a class="previous break" href="index.html">Previous</a> <a class="next break" href="s3-start03.html">Next</a>
+</div>
+</body>
+</html>
