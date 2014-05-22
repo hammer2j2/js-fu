@@ -1,16 +1,25 @@
-// Javascript to expand included content in external files residing on the same site.
+//
+// Author: Clayton Han-Mitchell
+// License: The MIT License
+// 2014-05-21
+//
+// Javascript to expand included content in external files
 // Two types of expand currently supported are
 //
-// 1.Tests ( quizes ) can be configured in the setKey object below. The quiz 
-//   questions are in external json files of your making.  See example json 
-//   structure in the setquiz() function.  Add a "Test2" section to make a second 
-//   test and so on.  Stritcly speaking, no modification in setKey structure below is 
-//   required to start a single quiz, but you may want to modify the external quiz location. 
+// 1.Test answers can be configured in the setKey object below. The quizes 
+//   are placed in external json files.  See the sample json in the 
+//   setquiz() function.  Test is just an example test name.  You can add
+//   any name and any number of tests. Each test contains a set of questions and
+//   answers.
+//   Stritcly speaking, no modification in this file is needed to start using
+//   Test.  Everything is configured in the html, and the json file. 
 //
-// 2. Included files which expand (rollout) on clicking the prompting text.
-//    You may have as many included files in a page as desired as long as the included
-//    files are unique urls ( since it uses the id attribute to hold the url ).
-//    No modification of the below setKey structure is required for this function.
+// 2.Rollout text sections which expand on clicking the prompting text.
+//   You may have as many include files in a page as desired as long as the included
+//   files are unique urls ( since it uses the id attribute to hold the url ).
+//   No modification to this code is required for this function.
+//
+//  You will surely want to style the classes used.
 
 window.onload = initAll;
 
@@ -21,17 +30,19 @@ var quiz; // quiz global json
 function setKey(){
 return(
   { 
-    "Test1": 
+    "Test": 
         {
-            "fn": showanswer,
+            "classname":"Question",
             "toggle": "Answer",
+            "fn": showanswer,
             "text": "Show Answer",
             "datafile":"/quiz.json"
         },
     "Rollout": 
         {
-            "fn": fetchrollout,
+            "classname":"Rollout",
             "toggle": "Rollin",
+            "fn": fetchrollout,
             "text": "Show Text"
         }
   });
@@ -47,8 +58,8 @@ function initAll() {
     console.log('found key property = '+prop);
     for ( var i=0;i<allDivs.length;i++) {
     
-      if (allDivs[i].classList.contains(prop) ) {
-        console.log(prop + ' class found');
+      if (allDivs[i].classList.contains(key[prop].classname) ) {
+        console.log(key[prop].classname + ' class found');
         
         allDivs[i].onclick = key[prop].fn;
       }
@@ -66,52 +77,41 @@ function makequizurl(url) {
     return(newurl.replace(/\/([^\/]+)$/,url));
 }
 
-function fetchrollout() {
+function getprop(keyclass) {
+  for ( var prop in key ) {
+    if(keyclass == key[prop].classname) {
+      return(prop);
+    }
+  }
+}
 
-  console.log('in fetchdata, className = '+this.className);
-  key = setKey();
-  if( this.classList.toggle(key[this.classList[0]].toggle)) {
+function fetchrollout() {
+  var prop = getprop(this.classList[0]);
+  console.log('in fetchdata, className = '+this.className+' prop = '+prop);
+  if( this.classList.toggle(key[prop].toggle)) {
     var newurl = makeurl(this);
 
     loadHTTPData(this, newurl);
     return(false);
   }
   else {
-    this.innerHTML='<A name="#">'+key[this.classList[0]].text+'</A>';
+    this.innerHTML='<A name="#">'+key[prop].text+'</A>';
   }
 }
 
 // this is just an example quiz for troubleshooting
 // you could play with replacing setupquiz with this to test things
 
-function setquiz(){
-  return({
-    "01": {
-        "q": "What does EC2 stand for?",
-        "a": "Elastic Cloud Compute"
-    },
-    "02": {
-        "q": "What does S3 stand for?",
-        "a": "Simple Storage Service"
-    }
-  });
-}
-
 
 function showanswer() {
-  console.log('in showanswer, className = '+this.className);
-  if( this.classList.toggle(key[this.classList[0]].toggle)) {
-    setupquiz(this, this.classList[1], key.Question.datafile); 
+  var prop = getprop(this.classList[0]);
+  console.log('in showanswer, className = '+this.className+' prop = '+prop);
+  if( this.classList.toggle(key[prop].toggle)) {
+    setupquiz(this, this.classList[1], key[prop].datafile); 
   }
   else {
-    this.innerHTML='<A name="#">'+key[this.classList[0]].text+'</A>';
+    this.innerHTML='<A name="#">'+key[prop].text+'</A>';
   }
-}
-
-function fetchanswer(index) {
-    console.log('in fetchanswer, index = '+index);
-
-      return(quiz[index].a);
 }
 
 var AJAX_req;
@@ -143,7 +143,6 @@ function AJAX_JSON_Req(obj, index, url )
 }
 
 
-
 var xmlhttp = null;
 
 function loadHTTPData(obj, myLink) {
@@ -171,3 +170,17 @@ function loadHTTPData(obj, myLink) {
     xmlhttp.send();
 }
 
+// sample quiz only. Make a file that looks like this datastructure and save it as quiz.json
+
+function setquiz(){
+  return({
+    "01": {
+        "q": "What does EC2 stand for?",
+        "a": "Elastic Cloud Compute"
+    },
+    "02": {
+        "q": "What does S3 stand for?",
+        "a": "Simple Storage Service"
+    }
+  });
+}
