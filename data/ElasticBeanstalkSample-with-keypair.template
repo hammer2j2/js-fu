@@ -20,28 +20,11 @@
           "TemplateName" : "DefaultConfiguration",
           "Description" : "Default Configuration Version 1.0 - with SSH access",
           "SolutionStackName" : "64bit Amazon Linux running Tomcat 7",
-          "OptionSettings" : [
-            {
-            "Namespace" : "aws:ec2:vpc",
-            "OptionName" : "VPCId",
-            "Value" : "vpc-eb8aae80"
-            },
-            {
-            "Namespace" : "aws:ec2:vpc",
-            "OptionName" : "Subnets",
-            "Value" : "subnet-e98aae82"
-            },
-            {
-            "Namespace" : "aws:autoscaling:launchconfiguration",
-            "OptionName" : "SecurityGroups",
-            "Value" : "sg-c7a86aa2"
-            },
-            {
+          "OptionSettings" : [{
             "Namespace" : "aws:autoscaling:launchconfiguration",
             "OptionName" : "EC2KeyName",
             "Value" : "aws_rsa"
-            }
-          ]
+          }]
         }]
       }
     },
@@ -62,4 +45,3 @@
     }
   }
 }
-

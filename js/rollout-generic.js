@@ -36,7 +36,7 @@ return(
             "toggle": "Answer",
             "fn": showanswer,
             "text": "Show Answer",
-            "datafile":"/quiz.json"
+            "datafile":"data/quiz.json"
         },
     "Rollout": 
         {
@@ -67,14 +67,18 @@ function initAll() {
   }
 }
 
-function makeurl(obj) {
+// convert the relative urls to complete urls
+
+/* function makeurl(obj) {
     var url = document.location.href;
     return(url.replace(/\/([^\/]+)$/,obj.id));
 }
+*/
 
-function makequizurl(url) {
+function makeurl(url) {
     var newurl = document.location.href;
-    return(newurl.replace(/\/([^\/]+)$/,url));
+    var newstr = newurl.replace(/\/([^\/]+)$/,'');
+    return(newstr+'/'+url);
 }
 
 function getprop(keyclass) {
@@ -89,7 +93,7 @@ function fetchrollout() {
   var prop = getprop(this.classList[0]);
   console.log('in fetchdata, className = '+this.className+' prop = '+prop);
   if( this.classList.toggle(key[prop].toggle)) {
-    var newurl = makeurl(this);
+    var newurl = makeurl(this.id);
 
     loadHTTPData(this, newurl);
     return(false);
@@ -118,7 +122,7 @@ var AJAX_req;
 
 function setupquiz(obj, index, url) {
   // return(setquiz());
-  var newurl = makequizurl(url);
+  var newurl = makeurl(url);
   console.log('in setupquiz, url = '+url+' newurl = '+newurl); 
   AJAX_JSON_Req(obj, index, newurl);
 }
@@ -161,7 +165,7 @@ function loadHTTPData(obj, myLink) {
         if (xmlhttp.readyState==4 && xmlhttp.status==200 )
         {        console.log('in onreadystatechange HTTP 200');
     
-          obj.innerHTML=xmlhttp.responseText;
+          obj.innerHTML='<pre>'+xmlhttp.responseText+'</pre>';
         }   
       };
     }
